@@ -1,0 +1,210 @@
+---
+- name: Configure storage on workers
+  hosts: "{{ groups['workers'] }}"
+  tags:
+  - storage
+
+  tasks:
+    - name: Create openebs pvs on workers
+      shell: |
+        pvcreate -f /dev/xvdc
+      ignore_errors: true
+      become: true
+      become_method: sudo
+
+    - name: Create openebs vgs on workers
+      shell: |
+        vgcreate openebsvg /dev/xvdc
+      ignore_errors: true
+      become: true
+      become_method: sudo
+
+
+- name: Upgrade kubernetes on workers
+  hosts: "{{ groups['workers'] }}"
+  vars:
+    unseal_key_1: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          63333938353032363033393863376638316363616163356163373634323335356236653363646262
+          3930363830396531303062613365313262383932363636300a613938333163393166326233393830
+          65323162386432666161333864366561366361333366353533376637613338383936623766306338
+          6538343663643461650a303662386639383131376335326166643862626263346134323066313034
+          30316265323239613638623834353032346630656266656430363036336161656263663533366631
+          3832353035393165623135633035383562616230316463303264
+    unseal_key_2: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          63326633356165343365616165616337383931653435326462396231643366366464396161373232
+          6435633436313764373238366439356434393638333934340a303431646439383135306538653965
+          39366131313136343133313631316539646263323837346532656463343664316433663530363663
+          6437316266643566380a643833343430313364643632363064306132366334643034373335356264
+          36323435393837356465393362376431616432653864313238323131366134613162623434656636
+          3035643731386437326130326363373361316565363837633237
+    unseal_key_3: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          61313833333036323636623232353835353533313761316661663339376537373463613361316132
+          6166376138396536633364643435656334353031353461380a633332366138643833346264626531
+          65323332643130366439346432623262373638383639626631386561326262646630626337333337
+          6366646131303562340a333137643034303838613530653561613864323364663135383066643431
+          61373365313263346564376136383564316334666132653537633763376265316631346566336363
+          6330666566616561353036333063316566613265643763303930
+  serial: 1
+  tags:
+  - k8s_upgrade
+
+  tasks:
+    - name: Upgrade apply
+      shell: |
+        kubeadm upgrade node
+      ignore_errors: true
+      become: true
+      become_method: sudo
+    
+    - name: Drain the workers
+      shell: |
+        kubectl drain {{ inventory_hostname }} --ignore-daemonsets --delete-emptydir-data
+      ignore_errors: true
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo
+    
+    - name: upgrade kubelet/kubernetes-cni
+      ansible.builtin.apt:
+        name: 
+          - kubelet
+          - kubernetes-cni
+        state: latest
+        allow_change_held_packages: true
+      become: true
+      become_method: sudo
+
+    - name: restart kubelet
+      shell: |
+        systemctl restart kubelet.service
+      become: true
+      become_method: sudo
+
+    - name: Sleep for 5 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+
+    - name: Uncordon k8s-worker-1
+      shell: |
+        kubectl uncordon {{ inventory_hostname }}
+      ignore_errors: true
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo
+
+    - name: Sleep for 5 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+
+    - name: Check vault for sealed pods
+      shell: |
+        kubectl get pods -n vault -o wide | grep '0/1' | awk '{print $1}'
+      register: result
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo
+    - set_fact:
+        unready_vault_pod: "{{ item }}"
+      with_items:
+        - "{{ result.stdout }}"
+    - debug:
+        var: unready_vault_pod
+    
+    - name: Unseal unready vault pod - unseal key 1
+      shell: |
+        kubectl exec -it {{ unready_vault_pod }} -n vault -- vault operator unseal {{ unseal_key_1 }}
+      when: unready_vault_pod != ''
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo
+
+    - name: Unseal unready vault pod - unseal key 2
+      shell: |
+        kubectl exec -it {{ unready_vault_pod }} -n vault -- vault operator unseal {{ unseal_key_2 }}
+      when: unready_vault_pod != ''
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo
+
+    - name: Unseal unready vault pod - unseal key 3
+      shell: |
+        kubectl exec -it {{ unready_vault_pod }} -n vault -- vault operator unseal {{ unseal_key_3 }}
+      when: unready_vault_pod != ''
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo
+
+- name: Unseal vault on workers
+  hosts: localhost
+  vars:
+    unseal_key_1: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          63333938353032363033393863376638316363616163356163373634323335356236653363646262
+          3930363830396531303062613365313262383932363636300a613938333163393166326233393830
+          65323162386432666161333864366561366361333366353533376637613338383936623766306338
+          6538343663643461650a303662386639383131376335326166643862626263346134323066313034
+          30316265323239613638623834353032346630656266656430363036336161656263663533366631
+          3832353035393165623135633035383562616230316463303264
+    unseal_key_2: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          63326633356165343365616165616337383931653435326462396231643366366464396161373232
+          6435633436313764373238366439356434393638333934340a303431646439383135306538653965
+          39366131313136343133313631316539646263323837346532656463343664316433663530363663
+          6437316266643566380a643833343430313364643632363064306132366334643034373335356264
+          36323435393837356465393362376431616432653864313238323131366134613162623434656636
+          3035643731386437326130326363373361316565363837633237
+    unseal_key_3: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          61313833333036323636623232353835353533313761316661663339376537373463613361316132
+          6166376138396536633364643435656334353031353461380a633332366138643833346264626531
+          65323332643130366439346432623262373638383639626631386561326262646630626337333337
+          6366646131303562340a333137643034303838613530653561613864323364663135383066643431
+          61373365313263346564376136383564316334666132653537633763376265316631346566336363
+          6330666566616561353036333063316566613265643763303930
+  serial: 1
+  tags:
+  - vault_unseal
+
+  tasks:
+    - name: Check vault for sealed pods
+      shell: |
+        kubectl get pods -n vault -o wide | grep '0/1' | awk '{print $1}'
+      register: result
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo
+    - set_fact:
+        unready_vault_pod: "{{ item }}"
+      with_items:
+        - "{{ result.stdout }}"
+    - debug:
+        var: unready_vault_pod
+    
+    - name: Unseal unready vault pod - unseal key 1
+      shell: |
+        kubectl exec -it {{ unready_vault_pod }} -n vault -- vault operator unseal {{ unseal_key_1 }}
+      when: unready_vault_pod != ''
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo
+
+    - name: Unseal unready vault pod - unseal key 2
+      shell: |
+        kubectl exec -it {{ unready_vault_pod }} -n vault -- vault operator unseal {{ unseal_key_2 }}
+      when: unready_vault_pod != ''
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo
+
+    - name: Unseal unready vault pod - unseal key 3
+      shell: |
+        kubectl exec -it {{ unready_vault_pod }} -n vault -- vault operator unseal {{ unseal_key_3 }}
+      when: unready_vault_pod != ''
+      delegate_to: "k8s-master-1"
+      become: true
+      become_method: sudo

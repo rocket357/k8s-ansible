@@ -1,0 +1,75 @@
+---
+- name: Update apt cache
+  hosts: "{{ groups['all'] }}"
+  tags:
+  - hosts
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      become: true
+      become_method: sudo
+    
+    # stuff I like.  Adjust to suite your needs
+    - name: Core packages install
+      apt:
+        pkg:
+        - git
+        - mtr
+        - traceroute
+        - iftop
+        - python3
+        - python3-pip
+        - python3-kubernetes
+        - wireguard
+      become: true
+      become_method: sudo
+
+    # needed for openebs replicated volumes
+    - name: Ensure the nvme_tcp module is loaded on boot
+      ansible.builtin.lineinfile:
+        path: /etc/modules
+        regexp: '^nvme_tcp'
+        insertafter: '^#'
+        line: nvme_tcp
+      become: true
+      become_method: sudo
+
+    # needed for openebs replicated volumes
+    - name: Insert nvme_tcp module so we don't have to reboot
+      shell: |
+        modprobe nvme_tcp
+      become: true
+      become_method: sudo
+
+    - name: Update all packages
+      apt:
+        name: "*"
+        state: latest
+      become: true
+      become_method: sudo
+
+    - name: Remove useless packages from the cache
+      apt:
+        autoclean: yes
+      become: true
+      become_method: sudo
+
+    - name: Remove dependencies that are no longer required
+      apt:
+        autoremove: yes
+      become: true
+      become_method: sudo
+
+    - name: apt-get clean
+      apt:
+        clean: yes
+      become: true
+      become_method: sudo
+
+    - name: Clear old logs
+      shell: |
+        journalctl --vacuum-time=2d
+      become: true
+      become_method: sudo

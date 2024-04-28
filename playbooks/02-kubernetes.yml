@@ -1,0 +1,97 @@
+---
+- name: Kubernetes Running/Latest Version Checks
+  hosts: localhost
+  tags:
+  - k8s_upgrade
+
+  tasks:
+    - name: Determine kubernetes running version (kubernetes.core)
+      kubernetes.core.k8s_cluster_info:
+      register: api_status
+    - set_fact:
+        running_k8s_ver: "{{ item }}"
+      with_items:
+        - "{{ api_status.version.server.kubernetes.gitVersion }}"
+    - debug:
+        var: running_k8s_ver
+
+    - name: Determine latest kubernetes release
+      shell: |
+        curl -s https://kubernetes.io/releases/#release-history | tr '<' '\n' | egrep 'https://kubernetes.io/releases/>v[0-9]' | awk -F'[>]' '{print $2}'
+      register: result
+      ignore_errors: true
+    - set_fact:
+        upgrade_k8s_ver: "{{ item }}"
+      when: item is match('v[0-9].[0-9]{1,}')
+      with_items:
+        - "{{ result.stdout_lines }}"
+    - debug:
+        var: upgrade_k8s_ver
+
+
+
+- name: Package Upgrades for kubeadm
+  hosts: "{{ groups['kubernetes'] }}"
+  tags:
+  - k8s_upgrade
+
+  tasks:
+    - name: Backup /etc/apt/sources.list.d/kubernetes.list
+      shell: |
+        cp /etc/apt/sources.list.d/kubernetes.list /etc/apt/sources.list.d/kubernetes.list.BAK
+      become: true
+      become_method: sudo
+
+    - name: Create /etc/apt/sources.list.d/kubernetes.list.NEW
+      shell: |
+        awk -F'[:]' '{printf "%s:%s:%s:/{{ hostvars['localhost']['upgrade_k8s_ver'] }}/deb/ /\n", $1, $2, $3}' /etc/apt/sources.list.d/kubernetes.list > /etc/apt/sources.list.d/kubernetes.list.NEW
+      become: true
+      become_method: sudo
+      
+    - name: Update /etc/apt/sources.list.d/kubernetes.list
+      shell: |
+        mv /etc/apt/sources.list.d/kubernetes.list.NEW /etc/apt/sources.list.d/kubernetes.list
+      become: true
+      become_method: sudo
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+      become: true
+      become_method: sudo
+    
+    - name: Determine latest patch in release
+      shell: |
+        curl -s https://kubernetes.io/releases/#release-history | tr '<' '\n' | egrep -A10 '{{ hostvars['localhost']['upgrade_k8s_ver'] }}' | awk -F'[> ]' '/released/ {printf "v%s\n", $3}'
+      register: upgrade_ver_minor
+    
+    - name: upgrade kubeadm/kubectl
+      ansible.builtin.apt:
+        pkg:
+          - kubeadm
+          - kubectl
+        state: latest
+        allow_change_held_packages: true
+      become: true
+      become_method: sudo
+
+- name: kubeadm upgrade on k8s-master-1
+  hosts: "{{ groups['masters'][0] }}"
+  tags:
+  - k8s_upgrade
+
+  tasks:
+    - name: kubeadm upgrade plan
+      shell: |
+        kubeadm upgrade plan
+      register: result
+      become: true
+      become_method: sudo
+    - set_fact:
+        upgrade_k8s_plan: "{{ item }}"
+      with_items:
+        - "{{ result.stdout_lines }}"
+    
+    - name: prompt for continue
+      ansible.builtin.pause:
+        prompt: "Review the plan and hit enter to continue, otherwise Ctrl-C"

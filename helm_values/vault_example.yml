@@ -1,0 +1,82 @@
+global:
+  enabled: true
+  namespace: "vault"
+  tlsDisable: true
+  psp:
+    enable: false
+  serverTelemetry:
+    prometheusOperator: false
+injector:
+  enabled: "-"
+  replicas: 1
+  port: 8080
+  leaderElector:
+    enabled: true
+  metrics:
+    enabled: false
+  authPath: "auth/kubernetes"
+  logLevel: "info"
+server:
+  enabled: "-"
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      kubernetes.io/tls-acme: "true"
+    ingressClassName: "nginx"
+    pathType: Prefix
+    activeService: true
+    hosts:
+      - host: vault.k8s.example.com
+    tls:
+    - secretName: vault-k8s-example-com-tls
+      hosts:
+        - vault.k8s.example.com
+  authDelegator:
+    enabled: true
+  service:
+    enabled: true
+    active:
+      enabled: true
+  dataStorage:
+    enabled: true
+    size: 10Gi
+    mountPath: "/vault/data"
+    accessMode: ReadWriteOnce
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: true
+      config: |
+        ui = true
+        listener "tcp" {
+          tls_disable = 1
+          address = "[::]:8200"
+          cluster_address = "[::]:8201"
+        }
+        storage "raft" {
+          path = "/vault/data"
+        }
+        service_registration "kubernetes" {}
+    config: |
+      ui = false
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+      storage "consul" {
+        path = "vault"
+        address = "HOST_IP:8500"
+      }
+      service_registration "kubernetes" {}
+    disruptionBudget:
+      enabled: true
+      maxUnavailable: 1
+csi:
+  enabled: true
+  agent:
+    enabled: true

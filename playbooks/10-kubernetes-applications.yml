@@ -1,0 +1,43 @@
+---
+- name: Install/Upgrade kubernetes applications
+  hosts: localhost
+  tags:
+  - k8s_upgrade
+  - app_upgrade
+
+  tasks:
+    - name: Install/Update uptime-kuma helm chart
+      kubernetes.core.helm:
+        name: uptime-kuma
+        chart_ref: uptime-kuma/uptime-kuma
+        release_namespace: uptime-kuma
+        create_namespace: true
+        values_files:
+        - ../helm_values/uptime-kuma.yml
+
+    - name: Install/Update changedetection helm chart
+      kubernetes.core.helm:
+        name: changedetection-io
+        chart_ref: gabe565/changedetection-io
+        release_namespace: changedetection
+        create_namespace: true
+
+    - name: Ensure wbo Namespace
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/wbo-namespace.yml
+
+    - name: Ensure wbo deployment exists
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/wbo-deployment.yml
+
+    - name: Ensure wbo service exists
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/wbo-service.yml
+
+    - name: Ensure wbo ingress exists
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/wbo-ingress_j3z.yml

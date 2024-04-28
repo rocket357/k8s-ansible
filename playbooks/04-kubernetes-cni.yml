@@ -1,0 +1,47 @@
+---
+- name: Upgrade the CNI (calico/tigera-operator)
+  hosts: localhost
+  tags:
+  - k8s_upgrade
+  - cni_upgrade
+
+  tasks:
+    - name: Update the repository cache
+      kubernetes.core.helm:
+        name: dummy
+        namespace: kube-system
+        state: absent
+        update_repo_cache: true
+
+    - name: Install/Upgrade latest version of metallb
+      kubernetes.core.helm:
+        name: metallb
+        chart_ref: metallb/metallb
+        release_namespace: metallb
+        create_namespace: true
+
+    - name: Deploy metallb IPPool configuration
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/metallb-ippool-config_j3z.yml
+
+    - name: Install/Upgrade latest version of tigera-operator
+      kubernetes.core.helm:
+        name: calico
+        chart_ref: projectcalico/tigera-operator
+        release_namespace: tigera-operator
+        create_namespace: true
+
+    - name: Enable wireguard between nodes
+      shell: |
+        kubectl patch felixconfiguration default --type='merge' -p '{"spec":{"wireguardEnabled":true}}'
+
+    - name: Deploy calico BGP Process Configuration
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/calico-bgp-configuration_j3z.yml
+
+    - name: Deploy calico BGP Peer Configuration
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/calico-bgp-peer_j3z.yml

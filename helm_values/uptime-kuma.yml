@@ -1,0 +1,33 @@
+image:
+  pullPolicy: IfNotPresent
+  repository: louislam/uptime-kuma
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 15
+  timeoutSeconds: 2
+podEnv:
+- name: UPTIME_KUMA_PORT
+  value: "3001"
+podLabels:
+  app: uptime-kuma
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 15
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 2000m
+    memory: 1024Mi
+service:
+  port: 3001
+  type: ClusterIP
+strategy:
+  type: Recreate
+useDeploy: true
+volume:
+  accessMode: ReadWriteOnce
+  enabled: true
+  existingClaim: ""
+  size: 8Gi

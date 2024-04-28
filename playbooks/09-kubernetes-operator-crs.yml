@@ -1,0 +1,24 @@
+---
+- name: Install/Upgrade kubernetes applications
+  hosts: localhost
+  tags:
+  - k8s_upgrade
+  - crs_upgrade
+
+  tasks:
+    - name: Install/Update latest version of redis
+      kubernetes.core.helm:
+        name: redis
+        chart_ref: bitnami/redis
+        release_namespace: redis
+        create_namespace: true
+
+    - name: Ensure Kafka Cluster NodePool
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/kafka-nodepool_j3z.yml
+
+    - name: Ensure Kafka Cluster
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/kafka-cluster_j3z.yml

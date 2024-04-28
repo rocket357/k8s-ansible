@@ -1,0 +1,77 @@
+---
+- name: Configure storage on workers
+  hosts: "{{ groups['workers'] }}"
+  tags:
+  - storage
+
+  tasks:
+    - name: Create openebs pvs on workers
+      shell: |
+        pvcreate -f /dev/xvdc
+      ignore_errors: true
+      become: true
+      become_method: sudo
+
+    - name: Create openebs vgs on workers
+      shell: |
+        vgcreate openebsvg /dev/xvdc
+      ignore_errors: true
+      become: true
+      become_method: sudo
+
+
+- name: Upgrade kubernetes on workers
+  hosts: "{{ groups['workers'] }}"
+  serial: 1
+  tags:
+  - k8s_upgrade
+
+  tasks:
+    - name: Upgrade apply
+      shell: |
+        kubeadm upgrade node
+      ignore_errors: true
+      become: true
+      become_method: sudo
+    
+    - name: Drain the workers
+      shell: |
+        kubectl drain {{ inventory_hostname }} --ignore-daemonsets --delete-emptydir-data
+      ignore_errors: true
+      delegate_to: "{{ groups['masters'][0] }}"
+      become: true
+      become_method: sudo
+    
+    - name: upgrade kubelet/kubernetes-cni
+      ansible.builtin.apt:
+        name: 
+          - kubelet
+          - kubernetes-cni
+        state: latest
+        allow_change_held_packages: true
+      become: true
+      become_method: sudo
+
+    - name: restart kubelet
+      shell: |
+        systemctl restart kubelet.service
+      become: true
+      become_method: sudo
+
+    - name: Sleep for 30 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+
+    - name: Uncordon k8s-worker-1
+      shell: |
+        kubectl uncordon {{ inventory_hostname }}
+      ignore_errors: true
+      delegate_to: "{{ groups['masters'][0] }}"
+      become: true
+      become_method: sudo
+
+    - name: Sleep for 30 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost

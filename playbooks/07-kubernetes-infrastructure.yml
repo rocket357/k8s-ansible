@@ -1,0 +1,61 @@
+---
+- name: Install/Upgrade Infrastructure bits
+  hosts: localhost
+  tags:
+  - k8s_upgrade
+  - infra
+
+  tasks:
+    - name: Deploy latest version of cert-manager
+      kubernetes.core.helm:
+        name: cert-manager
+        chart_ref: jetstack/cert-manager
+        release_namespace: cert-manager
+        create_namespace: true
+        values:
+          crds:
+            enabled: true
+            keep: true
+    
+    - name: Determine installed/upgraded cert-manager version
+      shell: |
+        helm ls -n cert-manager | awk '/cert-manager/ {print $10}'
+      register: result
+    - set_fact:
+        cert_manager_ver: "{{ item }}"
+      with_items:
+        - "{{ result.stdout_lines }}"
+    - debug:
+        var: cert_manager_ver
+
+    - name: Install/Upgrade cert-manager CRDs
+      shell: |
+        kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_ver }}/cert-manager.crds.yaml
+
+    - name: Ensure cert-manager ClusterIssuer exists
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/cert-manager-clusterissuer_j3z.yml
+
+    - name: Install/Upgrade ingress-nginx
+      kubernetes.core.helm:
+        name: ingress-nginx
+        chart_ref: ingress-nginx/ingress-nginx
+        release_namespace: ingress-nginx
+        create_namespace: true
+
+    # CVE-2021-25742!  Uncomment *ONLY* if required (i.e. for authelia)!
+    # This should *not* be uncommented on a multi-tenant kubernetes installation!
+    # Allowing untrusted config-snippets could leak secrets!
+    #- name: Re-enable snippet-annotations in ingress-nginx
+    #  shell: |
+    #    kubectl patch configmap ingress-nginx-controller -n ingress-nginx --type='merge' -p '{"data":{"allow-snippet-annotations":"true"}}'
+    
+    - name: Install/Upgrade hashicorp Vault
+      kubernetes.core.helm:
+        name: vault-2
+        chart_ref: hashicorp/vault
+        release_namespace: vault
+        create_namespace: true
+        values_files:
+        - ../helm_values/vault_j3z.org

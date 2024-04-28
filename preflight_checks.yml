@@ -1,0 +1,29 @@
+---
+- name: Preflight infomation gathering - Debian version
+  hosts: "{{ groups['all'] }}"
+  tags:
+  - always
+
+  tasks:
+    - name: Check supplied sudo password is correct
+      shell: |
+        whoami
+      register: result
+      become: true
+      become_method: sudo
+    - set_fact:
+        whoami_ver: "{{ item }}"
+      when: item is match('root')
+      with_items:
+        - "{{ result.stdout_lines }}"
+      
+    - name: Determine installed version of Debian
+      shell: |
+        awk -F'"' '/VERSION_ID/ {print $2}' /etc/os-release
+      register: result
+      ignore_errors: true
+    - set_fact:
+        debian_ver: "{{ item }}"
+      when: item is match('[0-9]{1,}')
+      with_items:
+        - "{{ result.stdout_lines }}"

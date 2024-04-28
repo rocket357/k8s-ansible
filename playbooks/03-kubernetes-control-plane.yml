@@ -1,0 +1,160 @@
+---
+- name: Upgrade kubernetes on first master
+  hosts: "{{ groups['masters'][0] }}"
+  tags:
+  - k8s_upgrade
+
+  tasks:
+    - name: Upgrade on k8s-master-1
+      shell: |
+        kubeadm upgrade apply -y {{ upgrade_ver_minor.stdout }}
+      ignore_errors: true
+      become: true
+      become_method: sudo
+    
+    - name: Drain k8s-master-1
+      shell: |
+        kubectl drain {{ groups['masters'][0] }} --ignore-daemonsets
+      ignore_errors: true
+      become: true
+      become_method: sudo
+    
+    - name: upgrade kubelet/kubernetes-cni
+      ansible.builtin.apt:
+        name: 
+          - kubelet
+          - kubernetes-cni
+        state: latest
+        allow_change_held_packages: true
+      become: true
+      become_method: sudo
+
+    - name: restart kubelet
+      shell: |
+        systemctl restart kubelet.service
+      become: true
+      become_method: sudo
+
+    - name: Sleep for 5 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+      
+    - name: Uncordon k8s-master-1
+      shell: |
+        kubectl uncordon k8s-master-1
+      become: true
+      become_method: sudo
+
+    - name: Sleep for 5 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+
+
+
+- name: Upgrade kubernetes on second master
+  hosts: "{{ groups['masters'][1] }}"
+  tags:
+  - k8s_upgrade
+
+  tasks:
+    - name: Upgrade on k8s-master-2
+      shell: |
+        kubeadm upgrade node
+      ignore_errors: true
+      become: true
+      become_method: sudo
+    
+    - name: Drain k8s-master-2
+      shell: |
+        kubectl drain {{ groups['masters'][1] }} --ignore-daemonsets
+      ignore_errors: true
+      become: true
+      become_method: sudo
+    
+    - name: upgrade kubelet/kubernetes-cni
+      ansible.builtin.apt:
+        name: 
+          - kubelet
+          - kubernetes-cni
+        state: latest
+        allow_change_held_packages: true
+      become: true
+      become_method: sudo
+
+    - name: restart kubelet
+      shell: |
+        systemctl restart kubelet.service
+      become: true
+      become_method: sudo
+
+    - name: Sleep for 5 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+      
+    - name: Uncordon k8s-master-2
+      shell: |
+        kubectl uncordon k8s-master-2
+      become: true
+      become_method: sudo
+      
+    - name: Sleep for 5 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+
+
+
+- name: Upgrade kubernetes on third master
+  hosts: "{{ groups['masters'][2] }}"
+  tags:
+  - k8s_upgrade
+
+  tasks:
+    - name: Upgrade on k8s-master-3
+      shell: |
+        kubeadm upgrade node
+      ignore_errors: true
+      become: true
+      become_method: sudo
+    
+    - name: Drain k8s-master-3
+      shell: |
+        kubectl drain {{ groups['masters'][2] }} --ignore-daemonsets
+      ignore_errors: true
+      become: true
+      become_method: sudo
+    
+    - name: upgrade kubelet/kubernetes-cni
+      ansible.builtin.apt:
+        name:
+          - kubelet
+          - kubernetes-cni
+        state: latest
+        allow_change_held_packages: true
+      become: true
+      become_method: sudo
+
+    - name: restart kubelet
+      shell: |
+        systemctl restart kubelet.service
+      become: true
+      become_method: sudo
+
+    - name: Sleep for 5 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost
+      
+    - name: Uncordon k8s-master-3
+      shell: |
+        kubectl uncordon k8s-master-3
+      become: true
+      become_method: sudo
+      
+    - name: Sleep for 5 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 30
+      delegate_to: localhost

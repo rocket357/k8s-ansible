@@ -1,0 +1,7 @@
+apiVersion: projectcalico.org/v3
+kind: BGPPeer
+metadata:
+  name: rtr1-example-com
+spec:
+  peerIP: 10.0.0.1
+  asNumber: 65001

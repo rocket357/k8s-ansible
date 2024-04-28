@@ -1,0 +1,19 @@
+---
+- name: Upgrade csi drivers
+  hosts: localhost
+  tags:
+  - k8s_upgrade
+  - csi_upgrade
+
+  tasks:
+    - name: Deploy latest version of openebs
+      kubernetes.core.helm:
+        name: openebs
+        chart_ref: openebs/openebs
+        release_namespace: csi-openebs
+        create_namespace: true
+
+    - name: Ensure StorageClass exists
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/openebs-lvm-storageclass.yml

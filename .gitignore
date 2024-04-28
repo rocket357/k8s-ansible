@@ -1,0 +1,8 @@
+*-password.txt
+lib64
+bin/*
+include/*
+lib/*
+pyvenv.cfg
+helm_values/*j3z*
+k8s_manifests/*j3z*

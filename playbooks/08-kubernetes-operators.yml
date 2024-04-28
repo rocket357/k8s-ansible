@@ -1,0 +1,21 @@
+---
+- name: Upgrade operators
+  hosts: localhost
+  tags:
+  - k8s_upgrade
+  - operators
+
+  tasks:
+    - name: Install/Update latest version of postgres-operator
+      kubernetes.core.helm:
+        name: postgres-operator
+        chart_ref: postgres-operator-charts/postgres-operator
+        release_namespace: postgres-operator
+        create_namespace: true
+
+    - name: Install/Update strimzi Kafka operator
+      kubernetes.core.helm:
+        name: strimzi-kafka-operator
+        chart_ref: strimzi/strimzi-kafka-operator
+        release_namespace: kafka-operator
+        create_namespace: true

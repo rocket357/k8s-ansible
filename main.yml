@@ -1,0 +1,12 @@
+---
+- import_playbook: "preflight_checks.yml"
+- import_playbook: "playbooks/01-debian.yml"
+- import_playbook: "playbooks/02-kubernetes.yml"
+- import_playbook: "playbooks/03-kubernetes-control-plane.yml"
+- import_playbook: "playbooks/04-kubernetes-cni.yml"
+- import_playbook: "playbooks/05-kubernetes-workers.yml"
+- import_playbook: "playbooks/06-kubernetes-csi.yml"
+- import_playbook: "playbooks/07-kubernetes-infrastructure.yml"
+- import_playbook: "playbooks/08-kubernetes-operators.yml"
+- import_playbook: "playbooks/09-kubernetes-operator-crs.yml"
+- import_playbook: "playbooks/10-kubernetes-applications.yml"
