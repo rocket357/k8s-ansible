@@ -58,4 +58,4 @@
         release_namespace: vault
         create_namespace: true
         values_files:
-        - ../helm_values/vault_j3z.org
+        - ../helm_values/vault_j3z.yml

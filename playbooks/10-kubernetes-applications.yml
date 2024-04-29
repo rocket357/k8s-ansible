@@ -15,6 +15,20 @@
         values_files:
         - ../helm_values/uptime-kuma.yml
 
+    - name: Install/Update gotify helm chart
+      kubernetes.core.helm:
+        name: gotify
+        chart_ref: rubxkube/gotify
+        release_namespace: gotify
+        create_namespace: true
+        values_files:
+        - ../helm_values/gotify_j3z.yml
+    
+    - name: Ensure gotify ingress exists
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/gotify-ingress_j3z.yml
+
     - name: Install/Update changedetection helm chart
       kubernetes.core.helm:
         name: changedetection-io
