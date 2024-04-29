@@ -12,6 +12,8 @@
         chart_ref: bitnami/redis
         release_namespace: redis
         create_namespace: true
+        values_files:
+        - ../helm_values/redis_j3z.yml
 
     - name: Ensure Kafka Cluster NodePool
       kubernetes.core.k8s:
@@ -22,3 +24,22 @@
       kubernetes.core.k8s:
         state: present
         src: ../k8s_manifests/kafka-cluster_j3z.yml
+    
+    - name: Ensure authelia configuration db
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/authelia-db_j3z.yml
+
+    - name: Ensure Authelia Redis Network Policy
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/authelia-redis-netpol.yml
+
+    - name: Install/Update latest version of authelia
+      kubernetes.core.helm:
+        name: authelia
+        chart_ref: authelia/authelia
+        release_namespace: authelia
+        create_namespace: true
+        values_files:
+        - ../helm_values/authelia_j3z.yml

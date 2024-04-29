@@ -6,7 +6,7 @@
   - csi_upgrade
 
   tasks:
-    - name: Deploy latest version of openebs
+    - name: Install/Upgrade latest version of openebs
       kubernetes.core.helm:
         name: openebs
         chart_ref: openebs/openebs

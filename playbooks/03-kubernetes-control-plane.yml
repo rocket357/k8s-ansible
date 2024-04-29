@@ -35,7 +35,7 @@
       become: true
       become_method: sudo
 
-    - name: Sleep for 5 seconds and continue with play
+    - name: Sleep for 30 seconds and continue with play
       ansible.builtin.wait_for:
         timeout: 30
       delegate_to: localhost
@@ -46,7 +46,7 @@
       become: true
       become_method: sudo
 
-    - name: Sleep for 5 seconds and continue with play
+    - name: Sleep for 30 seconds and continue with play
       ansible.builtin.wait_for:
         timeout: 30
       delegate_to: localhost
@@ -89,7 +89,7 @@
       become: true
       become_method: sudo
 
-    - name: Sleep for 5 seconds and continue with play
+    - name: Sleep for 30 seconds and continue with play
       ansible.builtin.wait_for:
         timeout: 30
       delegate_to: localhost
@@ -100,7 +100,7 @@
       become: true
       become_method: sudo
       
-    - name: Sleep for 5 seconds and continue with play
+    - name: Sleep for 30 seconds and continue with play
       ansible.builtin.wait_for:
         timeout: 30
       delegate_to: localhost
@@ -143,7 +143,7 @@
       become: true
       become_method: sudo
 
-    - name: Sleep for 5 seconds and continue with play
+    - name: Sleep for 30 seconds and continue with play
       ansible.builtin.wait_for:
         timeout: 30
       delegate_to: localhost
@@ -154,7 +154,7 @@
       become: true
       become_method: sudo
       
-    - name: Sleep for 5 seconds and continue with play
+    - name: Sleep for 30 seconds and continue with play
       ansible.builtin.wait_for:
         timeout: 30
       delegate_to: localhost
