@@ -6,3 +6,4 @@ lib/*
 pyvenv.cfg
 helm_values/*j3z*
 k8s_manifests/*j3z*
+playbooks/05-kubernetes-workers-with-vault.yml
