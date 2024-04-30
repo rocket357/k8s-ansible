@@ -12,7 +12,7 @@ to the latest and greatest version (v1.30 at the time of writing).  It then perf
 control plane update/kubelet restart in a controlled fashion, then upgrades the CNI (calico with metallb, 
 adjust to suite your needs), then performs a host-by-host update/kubelet restart of the workers.  Once 
 that is done, the CSI(s) are upgraded (OpenEBS), infrastructure bits are upgraded (cert-manager, ingress-nginx,
-vault), operators (strimzi kafka operator and zalando postgres-operator), operator crs (kafka cluster and redis),
-and finally, applications are installed (uptime-kuma, wbo and changedetection-io).
+vault), operators (strimzi kafka operator and zalando postgres-operator), operator crs (kafka cluster, redis 
+and authelia), and finally, applications are installed (uptime-kuma, gotify, wbo and changedetection-io).
 
 These are just my preferences, feel free to add/remove as you see fit!
