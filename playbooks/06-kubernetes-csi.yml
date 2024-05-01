@@ -12,6 +12,8 @@
         chart_ref: openebs/openebs
         release_namespace: csi-openebs
         create_namespace: true
+        values_files:
+        - ../helm_values/openebs.yml
 
     - name: Ensure StorageClass exists
       kubernetes.core.k8s:

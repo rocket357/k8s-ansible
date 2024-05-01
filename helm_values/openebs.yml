@@ -1,0 +1,196 @@
+rbac:
+  create: true
+  pspEnabled: false
+  kyvernoEnabled: false
+
+serviceAccount:
+  create: true
+  name:
+
+legacy:
+  enabled: false
+
+image:
+  pullPolicy: IfNotPresent
+  repository: ""
+
+apiserver:
+  enabled: true
+  image: "openebs/m-apiserver"
+  replicas: 1
+  ports:
+    externalPort: 5656
+    internalPort: 5656
+  sparse:
+    enabled: "false"
+
+defaultStorageConfig:
+  enabled: "true"
+varDirectoryPath:
+  baseDir: "/var/openebs"
+
+provisioner:
+  enabled: true
+  image: "openebs/openebs-k8s-provisioner"
+  replicas: 1
+  enableLeaderElection: true
+  patchJivaNodeAffinity: enabled
+
+localprovisioner:
+  enabled: true
+  image: "openebs/provisioner-localpv"
+  replicas: 1
+  enableLeaderElection: true
+  enableDeviceClass: true
+  enableHostpathClass: true
+  basePath: "/var/openebs/local"
+  waitForBDBindTimeoutRetryCount: "12"
+
+  deviceClass:
+    name: openebs-device
+    enabled: true
+    reclaimPolicy: Delete
+    isDefaultClass: false
+    fsType: "ext4"
+
+  hostpathClass:
+    name: openebs-hostpath
+    enabled: true
+    reclaimPolicy: Delete
+    isDefaultClass: false
+    basePath: ""
+    xfsQuota:
+      enabled: false
+      softLimitGrace: "0%"
+      hardLimitGrace: "0%"
+    ext4Quota:
+      enabled: false
+      softLimitGrace: "0%"
+      hardLimitGrace: "0%"
+
+snapshotOperator:
+  enabled: true
+  controller:
+    image: "openebs/snapshot-controller"
+  provisioner:
+    image: "openebs/snapshot-provisioner"
+  replicas: 1
+  enableLeaderElection: true
+  upgradeStrategy: "Recreate"
+ndm:
+  enabled: true
+  image: "openebs/node-disk-manager"
+  sparse:
+    path: "/var/openebs/sparse"
+    size: "10737418240"
+    count: "0"
+  filters:
+    enableOsDiskExcludeFilter: true
+    osDiskExcludePaths: "/,/etc/hosts,/boot"
+    enableVendorFilter: true
+    excludeVendors: "CLOUDBYT,OpenEBS"
+    enablePathFilter: true
+    includePaths: ""
+    excludePaths: "/dev/loop,/dev/fd0,/dev/sr0,/dev/ram,/dev/dm-,/dev/md,/dev/rbd,/dev/zd"
+  probes:
+    enableSeachest: false
+ndmOperator:
+  enabled: true
+  image: "openebs/node-disk-operator"
+  replicas: 1
+  upgradeStrategy: Recreate
+webhook:
+  enabled: true
+  image: "openebs/admission-server"
+  failurePolicy: "Fail"
+  replicas: 1
+  healthCheck:
+    initialDelaySeconds: 30
+    periodSeconds: 60
+  hostNetwork: false
+helper:
+  image: "openebs/linux-utils"
+featureGates:
+  enabled: true
+  GPTBasedUUID:
+    enabled: true
+    featureGateFlag: "GPTBasedUUID"
+  APIService:
+    enabled: false
+    featureGateFlag: "APIService"
+    address: "0.0.0.0:9115"
+  UseOSDisk:
+    enabled: false
+    featureGateFlag: "UseOSDisk"
+  ChangeDetection:
+    enabled: false
+    featureGateFlag: "ChangeDetection"
+  PartitionTableUUID:
+    enabled: false
+    featureGateFlag: "PartitionTableUUID"
+crd:
+  enableInstall: true
+policies:
+  monitoring:
+    enabled: true
+    image: "openebs/m-exporter"
+analytics:
+  enabled: true
+  pingInterval: "24h"
+
+## disabled shit
+ndmExporter:
+  enabled: false
+  image:
+    registry:
+    repository: openebs/node-disk-exporter
+    pullPolicy: IfNotPresent
+  nodeExporter:
+    name: ndm-node-exporter
+    podLabels:
+      name: openebs-ndm-node-exporter
+    metricsPort: 9101
+  clusterExporter:
+    name: ndm-cluster-exporter
+    podLabels:
+      name: openebs-ndm-cluster-exporter
+    metricsPort: 9100
+mayastor:
+  enabled: false
+  image:
+    registry: docker.io
+    repo: openebs
+    pullPolicy: IfNotPresent
+jiva:
+  enabled: false
+  image: "openebs/jiva"
+  replicas: 3
+  defaultStoragePath: "/var/openebs"
+  openebsLocalpv:
+    enabled: false
+  localpv-provisioner:
+    openebsNDM:
+      enabled: false
+cstor:
+  enabled: false
+  openebsNDM:
+    enabled: false
+openebs-ndm:
+  enabled: false
+localpv-provisioner:
+  enabled: false
+  openebsNDM:
+    enabled: false
+zfs-localpv:
+  enabled: false
+lvm-localpv:
+  enabled: false
+nfs-provisioner:
+  enabled: false
+cleanup:
+  image:
+    #registry:
+    repository: bitnami/kubectl
+    tag:
+    imagePullSecrets: []
+      #  - name: image-pull-secret
