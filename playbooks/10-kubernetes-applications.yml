@@ -35,6 +35,8 @@
         chart_ref: gabe565/changedetection-io
         release_namespace: changedetection
         create_namespace: true
+        values_files:
+        - ../helm_values/changedetection.yml
 
     - name: Ensure wbo Namespace
       kubernetes.core.k8s:
