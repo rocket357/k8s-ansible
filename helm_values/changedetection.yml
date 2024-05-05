@@ -35,3 +35,4 @@ browserless:
     ENABLE_DEBUGGER: "false"
     DEFAULT_BLOCK_ADS: "true"
     DEFAULT_STEALTH: "true"
+    CONNECTION_TIMEOUT: "300000"
