@@ -15,7 +15,12 @@
         values_files:
         - ../helm_values/openebs.yml
 
-    - name: Ensure StorageClass exists
+    - name: Ensure OpenEBS lvm StorageClass exists
       kubernetes.core.k8s:
         state: present
         src: ../k8s_manifests/openebs-lvm-storageclass.yml
+
+    - name: Ensure OpenEBS mayastor StorageClass exists
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/openebs-replicated-storageclass.yml

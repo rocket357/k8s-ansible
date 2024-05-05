@@ -5,19 +5,33 @@
   - storage
 
   tasks:
-    - name: Create openebs pvs on workers
+    - name: Create openebs lvm pvs on workers
       shell: |
         pvcreate -f /dev/xvdc
       ignore_errors: true
       become: true
       become_method: sudo
 
-    - name: Create openebs vgs on workers
+    - name: Create openebs lvm vgs on workers
       shell: |
         vgcreate openebsvg /dev/xvdc
       ignore_errors: true
       become: true
       become_method: sudo
+    
+    - name: Create diskpool for worker
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: "openebs.io/v1beta2"
+          kind: DiskPool
+          metadata:
+            name: "diskpool-{{ inventory_hostname }}"
+            namespace: csi-openebs
+          spec:
+            node: "{{ inventory_hostname }}"
+            disks: ["/dev/xvdb"]
+      delegate_to: "k8s-master-1"
 
 
 - name: Upgrade kubernetes on workers

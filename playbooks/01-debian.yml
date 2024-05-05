@@ -33,6 +33,7 @@
         regexp: '^nvme_tcp'
         insertafter: '^#'
         line: nvme_tcp
+      when: inventory_hostname in groups["workers"]
       become: true
       become_method: sudo
 
@@ -42,6 +43,77 @@
         modprobe nvme_tcp
       become: true
       become_method: sudo
+      when: inventory_hostname in groups["workers"]
+
+    - name: Ensure hugepages group exists on host
+      shell: |
+        groupadd my-hugetlbfs
+      ignore_errors: true
+      become: true
+      become_method: sudo
+      when: inventory_hostname in groups["workers"]
+
+    - name: Ensure hugepages filesystem exists on host
+      shell: |
+        mkdir /hugepages
+      ignore_errors: true
+      become: true
+      become_method: sudo
+      when: inventory_hostname in groups["workers"]
+
+    - name: Ensure hugepages sysctl is set on host
+      shell: |
+        sysctl vm.nr_hugepages=1024
+      ignore_errors: true
+      become: true
+      become_method: sudo
+      when: inventory_hostname in groups["workers"]
+
+    - name: Ensure hugepages sysctl is set on host
+      shell: |
+        sysctl vm.hugetlb_shm_group=1001
+      ignore_errors: true
+      become: true
+      become_method: sudo
+      when: inventory_hostname in groups["workers"]
+      
+    - name: Ensure hugepages sysctl.conf entry exists on host
+      lineinfile:
+        path: /etc/sysctl.conf
+        state: present
+        line: vm.nr_hugepages=1024
+      ignore_errors: true
+      become: true
+      become_method: sudo
+      when: inventory_hostname in groups["workers"]
+      
+    - name: Ensure hugepages sysctl.conf entry exists on host
+      lineinfile:
+        path: /etc/sysctl.conf
+        state: present
+        line: vm.hugetlb_shm_group=1001
+      ignore_errors: true
+      become: true
+      become_method: sudo
+      when: inventory_hostname in groups["workers"]
+      
+    - name: Ensure hugepages fstab entry exists on host
+      lineinfile:
+        path: /etc/fstab
+        state: present
+        line: hugetlbfs /hugepages hugetlbfs mode=1770,gid=1001 0 0
+      ignore_errors: true
+      become: true
+      become_method: sudo
+      when: inventory_hostname in groups["workers"]
+
+    - name: Ensure hugepages filesystem is mounted on host
+      shell: |
+        mount -a
+      ignore_errors: true
+      become: true
+      become_method: sudo
+      when: inventory_hostname in groups["workers"]
 
     - name: Update all packages
       apt:
