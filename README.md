@@ -10,7 +10,7 @@ The playbooks are broken down by topic.  02-kubernetes.yml performs a "latest an
 check against https://kubernetes.io/releases/#release-history and configures the apt sources to point 
 to the latest and greatest version (v1.30 at the time of writing).  It then performs a host-by-host
 control plane update/kubelet restart in a controlled fashion, then upgrades the CNI (calico with metallb, 
-adjust to suite your needs), then performs a host-by-host update/kubelet restart of the workers.  Once 
+adjust to suit your needs), then performs a host-by-host update/kubelet restart of the workers.  Once 
 that is done, the CSI(s) are upgraded (OpenEBS), infrastructure bits are upgraded (cert-manager, ingress-nginx,
 vault), operators (strimzi kafka operator and zalando postgres-operator), operator crs (kafka cluster, redis 
 and authelia), and finally, applications are installed (uptime-kuma, gotify, wbo and changedetection-io).
