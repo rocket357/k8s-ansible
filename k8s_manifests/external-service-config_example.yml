@@ -1,0 +1,86 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ha-tls
+  namespace: external-services
+spec:
+  secretName: ha-example-com-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+  - ha.example.com
+  - unifi.example.com
+  - gitea.example.com
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homeassistant
+  namespace: external-services
+spec:
+  type: ExternalName
+  externalName: hahost.example.com
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: http-external-service-ingress
+  namespace: external-services
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/websocket-services: core-service
+    nginx.org/websocket-services: core-service
+spec:
+  tls:
+  - hosts:
+    - ha.example.com
+    - gitea.example.com
+    secretName: ha-example-com-tls
+  ingressClassName: nginx
+  rules:
+  - host: ha.example.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: homeassistant
+            port:
+              number: 8123
+  - host: gitea.example.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: homeassistant
+            port:
+              number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: https-external-service-ingress
+  namespace: external-services
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+spec:
+  tls:
+  - hosts:
+    - unifi.example.com
+    secretName: ha-example-com-tls
+  ingressClassName: nginx
+  rules:
+  - host: unifi.example.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: homeassistant
+            port:
+              number: 8443
