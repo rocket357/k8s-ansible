@@ -1,5 +1,5 @@
 ---
-- name: Install/Upgrade kubernetes applications
+- name: Install/Upgrade operator-based CRs
   hosts: localhost
   tags:
   - k8s_upgrade

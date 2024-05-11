@@ -6,6 +6,11 @@
   - infra
 
   tasks:
+    - name: Ensure cert-manager ClusterIssuer exists
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/cert-manager-clusterissuer_j3z.yml
+        
     - name: Deploy latest version of cert-manager
       kubernetes.core.helm:
         name: cert-manager
@@ -31,11 +36,6 @@
     - name: Install/Upgrade cert-manager CRDs
       shell: |
         kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_ver }}/cert-manager.crds.yaml
-
-    - name: Ensure cert-manager ClusterIssuer exists
-      kubernetes.core.k8s:
-        state: present
-        src: ../k8s_manifests/cert-manager-clusterissuer_j3z.yml
 
     - name: Install/Upgrade ingress-nginx
       kubernetes.core.helm:

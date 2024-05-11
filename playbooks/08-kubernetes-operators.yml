@@ -12,6 +12,8 @@
         chart_ref: postgres-operator-charts/postgres-operator
         release_namespace: postgres-operator
         create_namespace: true
+        values_files:
+        - ../helm_values/postgres-operator-values_j3z.yml
 
     - name: Install/Update strimzi Kafka operator
       kubernetes.core.helm:
