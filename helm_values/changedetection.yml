@@ -22,6 +22,7 @@ persistence:
     enabled: true
     mountPath: /datastore
     retain: true
+    storageClass: "openebs-single-replica"
     accessMode: ReadWriteOnce
     size: 10Gi
 
