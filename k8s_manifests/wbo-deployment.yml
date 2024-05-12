@@ -1,3 +1,16 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: wbo-data
+  namespace: wbo
+spec:
+  storageClassName: "openebs-single-replica"
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "10Gi"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,8 +28,19 @@ spec:
       labels:
         app: wbo
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
       - name: wbo
         image: lovasoa/wbo:latest
         ports:
         - containerPort: 80
+        volumeMounts:
+          - mountPath: "/opt/app/server-data"
+            name: wbo-data
+      volumes:
+        - name: wbo-data
+          persistentVolumeClaim:
+            claimName: wbo-data

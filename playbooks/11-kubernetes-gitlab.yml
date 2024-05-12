@@ -1,0 +1,15 @@
+---
+- name: Install/Upgrade kubernetes applications
+  hosts: localhost
+  tags:
+  - gitlab_install
+
+  tasks:
+    - name: Install/Update gitlab helm chart
+      kubernetes.core.helm:
+        name: gitlab
+        chart_ref: gitlab/gitlab
+        release_namespace: gitlab
+        create_namespace: true
+        values_files:
+        - ../helm_values/gitlab-values_j3z.yml

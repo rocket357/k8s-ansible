@@ -43,15 +43,6 @@
         state: present
         src: ../k8s_manifests/changedetection-ingress_j3z.yml
 
-    - name: Install/Update gitlab helm chart
-      kubernetes.core.helm:
-        name: gitlab
-        chart_ref: gitlab/gitlab
-        release_namespace: gitlab
-        create_namespace: true
-        values_files:
-        - ../helm_values/gitlab-values_j3z.yml
-
     - name: Ensure wbo Namespace
       kubernetes.core.k8s:
         state: present
