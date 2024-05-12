@@ -5,6 +5,11 @@
   - gitlab_install
 
   tasks:
+    - name: Ensure gitlab configuration db
+      kubernetes.core.k8s:
+        state: present
+        src: ../k8s_manifests/gitlab-postgresql_j3z.yml
+
     - name: Install/Update gitlab helm chart
       kubernetes.core.helm:
         name: gitlab
